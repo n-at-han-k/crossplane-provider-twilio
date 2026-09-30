@@ -275,7 +275,7 @@ jobs:
       # been reviewed yet. The repository check keeps forks from trying at all.
       - name: Publish Artifacts
         if: >-
-          github.repository == 'n-at-han-k/crossplane-provider-rt' &&
+          github.repository == 'n-at-han-k/crossplane-provider-twilio' &&
           github.event_name == 'push' &&
           (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-'))
         run: |
