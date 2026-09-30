@@ -1,0 +1,429 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.0
+  name: accountsmessages.twilio.crossplane.io
+spec:
+  group: twilio.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - twilio
+    kind: AccountsMessages
+    listKind: AccountsMessagesList
+    plural: accountsmessages
+    singular: accountsmessages
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A AccountsMessages is a managed Twilio resource.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A AccountsMessagesSpec defines the desired state of a AccountsMessages.
+            properties:
+              forProvider:
+                description: |-
+                  AccountsMessagesParameters are the configurable fields of a AccountsMessages.
+
+                  These are the parameters of the create operation (CreateMessage), plus any the
+                  update accepts and the create does not. The fields are spelled the way
+                  Twilio TAKES them -- PascalCase -- because that is the name the request
+                  carries; status.atProvider spells the same values the way Twilio ANSWERS
+                  them, in snake_case. Nothing translates between the two, so nothing can
+                  drift out of a translation layer.
+                properties:
+                  AddressRetention:
+                    description: AddressRetention
+                    type: string
+                  ApplicationSid:
+                    description: ApplicationSid The SID of the associated [TwiML Application](https://www.twilio.com/docs/usage/api/applications).
+                      [Message status callback requests](https://www.twilio.com/docs/sms/api/message-resource#twilios-request-to-the-statuscallback-url)
+                      are sent to the TwiML App's `message_status_callback` URL. Note
+                      that the `status_callback` parameter of a request takes priority
+                      over the `application_sid` parameter; if both are included `application_sid`
+                      is ignored.
+                    type: string
+                  Attempt:
+                    description: Attempt Total number of attempts made (including
+                      this request) to send the message regardless of the provider
+                      used
+                    type: integer
+                  Body:
+                    description: 'Body The text content of the outgoing message. Can
+                      be up to 1,600 characters in length. SMS only: If the `body`
+                      contains more than 160 [GSM-7](https://www.twilio.com/docs/glossary/what-is-gsm-7-character-encoding)
+                      characters (or 70 [UCS-2](https://www.twilio.com/docs/glossary/what-is-ucs-2-character-encoding)
+                      characters), the message is segmented and charged accordingly.
+                      For long `body` text, consider using the [send_as_mms parameter](https://www.twilio.com/blog/mms-for-long-text-messages).'
+                    type: string
+                  ContentRetention:
+                    description: ContentRetention
+                    type: string
+                  ContentSid:
+                    description: 'ContentSid For [Content Editor/API](https://www.twilio.com/docs/content)
+                      only: The SID of the Content Template to be used with the Message,
+                      e.g., `HXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`. If this parameter is
+                      not provided, a Content Template is not used. Find the SID in
+                      the Console on the Content Editor page. For Content API users,
+                      the SID is found in Twilio''s response when [creating the Template](https://www.twilio.com/docs/content/content-api-resources#create-templates)
+                      or by [fetching your Templates](https://www.twilio.com/docs/content/content-api-resources#fetch-all-content-resources).'
+                    type: string
+                  ContentVariables:
+                    description: 'ContentVariables For [Content Editor/API](https://www.twilio.com/docs/content)
+                      only: Key-value pairs of [Template variables](https://www.twilio.com/docs/content/using-variables-with-content-api)
+                      and their substitution values. `content_sid` parameter must
+                      also be provided. If values are not defined in the `content_variables`
+                      parameter, the [Template''s default placeholder values](https://www.twilio.com/docs/content/content-api-resources#create-templates)
+                      are used.'
+                    type: string
+                  FallbackFrom:
+                    description: FallbackFrom A fallback SMS sender to use when the
+                      recipient cannot be reached over RCS. This parameter may only
+                      be used when also providing a [Messaging Service](https://twilio.com/docs/messaging/services)
+                      containing an RCS sender. The fallback SMS sender must be either
+                      a Twilio phone number (in [E.164](https://en.wikipedia.org/wiki/E.164)
+                      format), [alphanumeric sender ID](https://www.twilio.com/docs/sms/quickstart),
+                      or [short code](https://www.twilio.com/en-us/messaging/channels/sms/short-codes),
+                      hosted within Twilio and belong to the Account creating the
+                      Message.
+                    type: string
+                  ForceDelivery:
+                    description: ForceDelivery Reserved
+                    type: boolean
+                  From:
+                    description: From The sender's Twilio phone number (in [E.164](https://en.wikipedia.org/wiki/E.164)
+                      format), [alphanumeric sender ID](https://www.twilio.com/docs/sms/quickstart),
+                      [Wireless SIM](https://www.twilio.com/docs/iot/wireless/programmable-wireless-send-machine-machine-sms-commands),
+                      [short code](https://www.twilio.com/en-us/messaging/channels/sms/short-codes),
+                      or [channel address](https://www.twilio.com/docs/messaging/channels)
+                      (e.g., `whatsapp:+15554449999`). The value of the `from` parameter
+                      must be a sender that is hosted within Twilio and belongs to
+                      the Account creating the Message. If you are using `messaging_service_sid`,
+                      this parameter can be empty (Twilio assigns a `from` value from
+                      the Messaging Service's Sender Pool) or you can provide a specific
+                      sender from your Sender Pool.
+                    type: string
+                  MaxPrice:
+                    description: MaxPrice [OBSOLETE] This parameter will no longer
+                      have any effect as of 2024-06-03.
+                    type: number
+                  MediaUrl:
+                    description: MediaUrl The URL of media to include in the Message
+                      content. `jpeg`, `jpg`, `gif`, and `png` file types are fully
+                      supported by Twilio and content is formatted for delivery on
+                      destination devices. The media size limit is 5 MB for supported
+                      file types (`jpeg`, `jpg`, `png`, `gif`) and 500 KB for [other
+                      types](https://www.twilio.com/docs/messaging/guides/accepted-mime-types)
+                      of accepted media. To send more than one image in the message,
+                      provide multiple `media_url` parameters in the POST request.
+                      You can include up to ten `media_url` parameters per message.
+                      [International](https://support.twilio.com/hc/en-us/articles/223179808-Sending-and-receiving-MMS-messages)
+                      and [carrier](https://support.twilio.com/hc/en-us/articles/223133707-Is-MMS-supported-for-all-carriers-in-US-and-Canada-)
+                      limits apply.
+                    items:
+                      type: string
+                    type: array
+                  MessageIntent:
+                    description: 'MessageIntent Specifies the purpose or use case
+                      of the outbound communication. This parameter is used by Twilio''s
+                      [Traffic Shaping](https://www.twilio.com/docs/messaging/features/traffic-shaping)
+                      and [Compliance Toolkit](https://www.twilio.com/docs/messaging/features/compliance-toolkit)
+                      products. Possible values include: `otp`, `notifications`, `marketing`,
+                      `fraud`, `security`, `customercare`, `delivery`, `education`,
+                      `polling`, `announcements`, and `events`.'
+                    type: string
+                  MessagingServiceSid:
+                    description: MessagingServiceSid The SID of the [Messaging Service](https://www.twilio.com/docs/messaging/services)
+                      you want to associate with the Message. When this parameter
+                      is provided and the `from` parameter is omitted, Twilio selects
+                      the optimal sender from the Messaging Service's Sender Pool.
+                      You may also provide a `from` parameter if you want to use a
+                      specific Sender from the Sender Pool.
+                    type: string
+                  PathAccountSid:
+                    description: PathAccountSid The SID of the [Account](https://www.twilio.com/docs/iam/api/account)
+                      creating the Message resource.
+                    type: string
+                  PersistentAction:
+                    description: PersistentAction Rich actions for non-SMS/MMS channels.
+                      Used for [sending location in WhatsApp messages](https://www.twilio.com/docs/whatsapp/message-features#location-messages-with-whatsapp).
+                    items:
+                      type: string
+                    type: array
+                  ProvideFeedback:
+                    description: ProvideFeedback Boolean indicating whether or not
+                      you intend to provide delivery confirmation feedback to Twilio
+                      (used in conjunction with the [Message Feedback subresource](https://www.twilio.com/docs/sms/api/message-feedback-resource)).
+                      Default value is `false`.
+                    type: boolean
+                  RiskCheck:
+                    description: RiskCheck
+                    type: string
+                  ScheduleType:
+                    description: ScheduleType
+                    type: string
+                  SendAsMms:
+                    description: SendAsMms If set to `true`, Twilio delivers the message
+                      as a single MMS message, regardless of the presence of media.
+                    type: boolean
+                  SendAt:
+                    description: SendAt The time that Twilio will send the message.
+                      Must be in ISO 8601 format.
+                    type: string
+                  ShortenUrls:
+                    description: 'ShortenUrls For Messaging Services with [Link Shortening
+                      configured](https://www.twilio.com/docs/messaging/features/link-shortening)
+                      only: A Boolean indicating whether or not Twilio should shorten
+                      links in the `body` of the Message. Default value is `false`.
+                      If `true`, the `messaging_service_sid` parameter must also be
+                      provided.'
+                    type: boolean
+                  SmartEncoded:
+                    description: 'SmartEncoded Whether to detect Unicode characters
+                      that have a similar GSM-7 character and replace them. Can be:
+                      `true` or `false`.'
+                    type: boolean
+                  Status:
+                    description: Status
+                    type: string
+                  StatusCallback:
+                    description: StatusCallback The URL of the endpoint to which Twilio
+                      sends [Message status callback requests](https://www.twilio.com/docs/sms/api/message-resource#twilios-request-to-the-statuscallback-url).
+                      URL must contain a valid hostname and underscores are not allowed.
+                      If you include this parameter with the `messaging_service_sid`,
+                      Twilio uses this URL instead of the Status Callback URL of the
+                      [Messaging Service](https://www.twilio.com/docs/messaging/api/service-resource).
+                    type: string
+                  To:
+                    description: To The recipient's phone number in [E.164](https://www.twilio.com/docs/glossary/what-e164)
+                      format (for SMS/MMS) or [channel address](https://www.twilio.com/docs/messaging/channels),
+                      e.g. `whatsapp:+15552229999`.
+                    type: string
+                  TrafficType:
+                    description: TrafficType
+                    type: string
+                  ValidityPeriod:
+                    description: ValidityPeriod The maximum length in seconds that
+                      the Message can remain in Twilio's outgoing message queue. If
+                      a queued Message exceeds the `validity_period`, the Message
+                      is not sent. Accepted values are integers from `1` to `36000`.
+                      Default value is `36000`. A `validity_period` greater than `5`
+                      is recommended. [Learn more about the validity period](https://www.twilio.com/blog/take-more-control-of-outbound-messages-using-validity-period-html)
+                    type: integer
+                required:
+                - To
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A AccountsMessagesStatus represents the observed state of
+              a AccountsMessages.
+            properties:
+              atProvider:
+                description: |-
+                  AccountsMessagesObservation are the observable fields of a AccountsMessages.
+
+                  These are the properties of what the read (FetchMessage) answers -- what IS,
+                  including the fields a person also writes. The controller diffs the two.
+                properties:
+                  account_sid:
+                    type: string
+                  api_version:
+                    type: string
+                  body:
+                    type: string
+                  date_created:
+                    type: string
+                  date_sent:
+                    type: string
+                  date_updated:
+                    type: string
+                  direction:
+                    type: string
+                  error_code:
+                    format: int64
+                    type: integer
+                  error_message:
+                    type: string
+                  from:
+                    type: string
+                  messaging_service_sid:
+                    type: string
+                  num_media:
+                    type: string
+                  num_segments:
+                    type: string
+                  price:
+                    type: string
+                  price_unit:
+                    type: string
+                  sid:
+                    type: string
+                  status:
+                    type: string
+                  subresource_uris:
+                    type: string
+                  to:
+                    type: string
+                  uri:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

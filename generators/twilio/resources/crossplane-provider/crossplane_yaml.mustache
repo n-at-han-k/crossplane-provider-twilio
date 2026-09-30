@@ -1,0 +1,82 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-{{providerName}}
+  annotations:
+    # NOTE: this block IS the Marketplace listing. Everything here is rendered
+    # publicly, so keep it accurate.
+    meta.crossplane.io/maintainer: {{gitUserId}} (https://{{gitHost}}/{{gitUserId}})
+    meta.crossplane.io/source: {{gitHost}}/{{gitUserId}}/{{gitRepoId}}
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      Manage {{providerTitle}} Identity Server as Kubernetes resources.
+    meta.crossplane.io/readme: |
+      `provider-{{providerName}}` manages {{providerTitle}} Identity Server as Kubernetes
+      resources, so tenants, organizations and applications can be declared
+      alongside the rest of your cluster and reconciled by Crossplane.
+
+      It is GENERATED from the API descriptions {{providerTitle}} publishes with the
+      server itself, so what it can manage is what those documents describe --
+      no more, and nothing hand-maintained that can drift from them.
+
+      ## Managed resources
+{{#apiInfo}}{{#apis}}{{#operations}}
+
+      * `{{kind}}`
+{{/operations}}{{/apis}}{{/apiInfo}}
+
+      ## Getting started
+
+      Install the provider, then give it an endpoint and a credential. Unlike
+      a single-key API, {{providerTitle}} needs to be told WHERE it is as well as who
+      you are, so the secret is one JSON document rather than a bare token:
+
+      ```yaml
+      apiVersion: pkg.crossplane.io/v1
+      kind: Provider
+      metadata:
+        name: provider-{{providerName}}
+      spec:
+        package: xpkg.upbound.io/{{gitUserId}}/provider-{{providerName}}:v0.1.0
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: {{providerName}}-creds
+        namespace: crossplane-system
+      type: Opaque
+      stringData:
+        credentials: |
+          {
+            "endpoint": "https://identity.example.com/api/server/v1",
+            "username": "admin",
+            "password": "admin"
+          }
+      ---
+      apiVersion: {{groupName}}/{{crdVersion}}
+      kind: ClusterProviderConfig
+      metadata:
+        name: default
+      spec:
+        credentials:
+          source: Secret
+          secretRef:
+            namespace: crossplane-system
+            name: {{providerName}}-creds
+            key: credentials
+      ```
+
+      `token` and `apiKey` are accepted in place of `username`/`password`.
+
+      See the `examples/` directory in the source repository for a manifest per
+      managed resource.
+spec:
+  # SafeStart, NOT "safe-start". crossplane/provider-template ships the
+  # kebab-case spelling, which is not the enum value: Crossplane silently
+  # prunes it, the ProviderRevision comes up with no capabilities, and the RBAC
+  # manager therefore never grants the CRD get/list/watch that a safe-start
+  # provider needs. The binary still runs its crd-gate, which then cannot sync
+  # and the container CrashLoopBackOffs with "failed to wait for crd-gate
+  # caches to sync".
+  capabilities:
+    - SafeStart

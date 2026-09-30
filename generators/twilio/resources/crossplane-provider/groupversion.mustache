@@ -1,0 +1,32 @@
+{{#operations}}
+{{>partial_header}}
+
+// Package {{crdVersion}} contains the {{crdVersion}} group {{kind}} resources of the
+// {{providerTitle}} provider.
+// +kubebuilder:object:generate=true
+// +groupName={{groupName}}
+// +versionName={{crdVersion}}
+package {{crdVersion}}
+
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
+
+// Package type metadata.
+const (
+	// CRDGroup, not Group: RT has a Kind called Group, and a package cannot
+	// hold both a const and a type of that name. upjet-generated providers
+	// spell it this way for the same reason.
+	CRDGroup = "{{groupName}}"
+	Version  = "{{crdVersion}}"
+)
+
+var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: CRDGroup, Version: Version}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+)
+{{/operations}}

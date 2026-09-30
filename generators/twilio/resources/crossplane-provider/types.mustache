@@ -1,0 +1,103 @@
+{{>partial_header}}
+
+package {{crdVersion}}
+
+import (
+	"reflect"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+)
+
+// NOTE: no `var _ resource.ModernManaged = &Kind{}` assertion here, unlike
+// a hand-written provider. The methods that satisfy it are the ones angryjet
+// writes, and angryjet LOADS this package to write them -- an assertion that
+// fails until it has run is a package that cannot compile until it has run,
+// and angryjet then cannot run. The provider still fails to build if the
+// methods are missing, because cmd/provider registers these types.
+
+{{#resources}}
+// {{kind}}Parameters are the configurable fields of a {{kind}}.
+//
+// These are the parameters of the create operation ({{#CREATE}}{{nickname}}{{/CREATE}}), plus any the
+// update accepts and the create does not. The fields are spelled the way
+// Twilio TAKES them -- PascalCase -- because that is the name the request
+// carries; status.atProvider spells the same values the way Twilio ANSWERS
+// them, in snake_case. Nothing translates between the two, so nothing can
+// drift out of a translation layer.
+type {{kind}}Parameters struct {
+{{#specFields}}
+	// {{goName}}{{#description}} {{{description}}}{{/description}}
+{{#required}}
+	// +kubebuilder:validation:Required
+	{{goName}} {{goType}} `json:"{{jsonName}}"`
+{{/required}}
+{{^required}}
+	// +optional
+	{{goName}} {{goType}} `json:"{{jsonName}},omitempty"`
+{{/required}}
+{{/specFields}}
+}
+
+// {{kind}}Observation are the observable fields of a {{kind}}.
+//
+// These are the properties of what the read ({{#FETCH}}{{nickname}}{{/FETCH}}) answers -- what IS,
+// including the fields a person also writes. The controller diffs the two.
+type {{kind}}Observation struct {
+{{#observation}}
+	{{goName}} {{goType}} `json:"{{jsonName}},omitempty"`
+{{/observation}}
+}
+
+// A {{kind}}Spec defines the desired state of a {{kind}}.
+type {{kind}}Spec struct {
+	xpv2.ManagedResourceSpec `json:",inline"`
+	ForProvider              {{kind}}Parameters `json:"forProvider"`
+}
+
+// A {{kind}}Status represents the observed state of a {{kind}}.
+type {{kind}}Status struct {
+	xpv2.ManagedResourceStatus `json:",inline"`
+	AtProvider                 {{kind}}Observation `json:"atProvider,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// A {{kind}} is a managed {{providerTitle}} resource.
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,{{providerName}}}
+type {{kind}} struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   {{kind}}Spec   `json:"spec"`
+	Status {{kind}}Status `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// {{kind}}List contains a list of {{kind}}
+type {{kind}}List struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []{{kind}} `json:"items"`
+}
+
+// {{kind}} type metadata.
+var (
+	{{kind}}Kind             = reflect.TypeOf({{kind}}{}).Name()
+	{{kind}}GroupKind        = schema.GroupKind{Group: CRDGroup, Kind: {{kind}}Kind}.String()
+	{{kind}}KindAPIVersion   = {{kind}}Kind + "." + SchemeGroupVersion.String()
+	{{kind}}GroupVersionKind = SchemeGroupVersion.WithKind({{kind}}Kind)
+)
+
+func init() {
+	SchemeBuilder.Register(&{{kind}}{}, &{{kind}}List{})
+}
+{{/resources}}

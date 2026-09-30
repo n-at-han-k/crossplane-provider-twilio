@@ -1,0 +1,642 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.0
+  name: accountsconferencesparticipants.twilio.crossplane.io
+spec:
+  group: twilio.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - twilio
+    kind: AccountsConferencesParticipants
+    listKind: AccountsConferencesParticipantsList
+    plural: accountsconferencesparticipants
+    singular: accountsconferencesparticipants
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+      name: EXTERNAL-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A AccountsConferencesParticipants is a managed Twilio resource.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A AccountsConferencesParticipantsSpec defines the desired
+              state of a AccountsConferencesParticipants.
+            properties:
+              forProvider:
+                description: |-
+                  AccountsConferencesParticipantsParameters are the configurable fields of a AccountsConferencesParticipants.
+
+                  These are the parameters of the create operation (CreateParticipant), plus any the
+                  update accepts and the create does not. The fields are spelled the way
+                  Twilio TAKES them -- PascalCase -- because that is the name the request
+                  carries; status.atProvider spells the same values the way Twilio ANSWERS
+                  them, in snake_case. Nothing translates between the two, so nothing can
+                  drift out of a translation layer.
+                properties:
+                  AmdStatusCallback:
+                    description: AmdStatusCallback The URL that we should call using
+                      the `amd_status_callback_method` to notify customer application
+                      whether the call was answered by human, machine or fax.
+                    type: string
+                  AmdStatusCallbackMethod:
+                    description: 'AmdStatusCallbackMethod The HTTP method we should
+                      use when calling the `amd_status_callback` URL. Can be: `GET`
+                      or `POST` and the default is `POST`.'
+                    type: string
+                  AnnounceMethod:
+                    description: 'AnnounceMethod The HTTP method we should use to
+                      call `announce_url`. Can be: `GET` or `POST` and defaults to
+                      `POST`.'
+                    type: string
+                  AnnounceUrl:
+                    description: AnnounceUrl The URL we call using the `announce_method`
+                      for an announcement to the participant. The URL may return an
+                      MP3 file, a WAV file, or a TwiML document that contains `<Play>`,
+                      `<Say>`, `<Pause>`, or `<Redirect>` verbs.
+                    type: string
+                  Beep:
+                    description: 'Beep Whether to play a notification beep to the
+                      conference when the participant joins. Can be: `true`, `false`,
+                      `onEnter`, or `onExit`. The default value is `true`.'
+                    type: string
+                  BeepOnExit:
+                    description: 'BeepOnExit Whether to play a notification beep to
+                      the conference when the participant exits. Can be: `true` or
+                      `false`.'
+                    type: boolean
+                  Byoc:
+                    description: Byoc The SID of a BYOC (Bring Your Own Carrier) trunk
+                      to route this call with. Note that `byoc` is only meaningful
+                      when `to` is a phone number; it will otherwise be ignored. (Beta)
+                    type: string
+                  CallReason:
+                    description: CallReason The Reason for the outgoing call. Use
+                      it to specify the purpose of the call that is presented on the
+                      called party's phone. (Branded Calls Beta)
+                    type: string
+                  CallSidToCoach:
+                    description: CallSidToCoach The SID of the participant who is
+                      being `coached`. The participant being coached is the only participant
+                      who can hear the participant who is `coaching`.
+                    type: string
+                  CallToken:
+                    description: CallToken A token string needed to invoke a forwarded
+                      call. A call_token is generated when an incoming call is received
+                      on a Twilio number. Pass an incoming call's call_token value
+                      to a forwarded call via the call_token parameter when creating
+                      a new call. A forwarded call should bear the same CallerID of
+                      the original incoming call.
+                    type: string
+                  CallerDisplayName:
+                    description: CallerDisplayName The name that populates the display
+                      name in the From header. Must be between 2 and 255 characters.
+                      Only applicable for calls to sip address.
+                    type: string
+                  CallerId:
+                    description: CallerId The phone number, Client identifier, or
+                      username portion of SIP address that made this call. Phone numbers
+                      are in [E.164](https://www.twilio.com/docs/glossary/what-e164)
+                      format (e.g., +16175551212). Client identifiers are formatted
+                      `client:name`. If using a phone number, it must be a Twilio
+                      number or a Verified [outgoing caller id](https://www.twilio.com/docs/voice/api/outgoing-caller-ids)
+                      for your account. If the `to` parameter is a phone number, `callerId`
+                      must also be a phone number. If `to` is sip address, this value
+                      of `callerId` should be a username portion to be used to populate
+                      the From header that is passed to the SIP endpoint.
+                    type: string
+                  ClientNotificationUrl:
+                    description: ClientNotificationUrl The URL that we should use
+                      to deliver `push call notification`.
+                    type: string
+                  Coaching:
+                    description: 'Coaching Whether the participant is coaching another
+                      call. Can be: `true` or `false`. If not present, defaults to
+                      `false` unless `call_sid_to_coach` is defined. If `true`, `call_sid_to_coach`
+                      must be defined.'
+                    type: boolean
+                  ConferenceRecord:
+                    description: 'ConferenceRecord Whether to record the conference
+                      the participant is joining. Can be: `true`, `false`, `record-from-start`,
+                      and `do-not-record`. The default value is `false`.'
+                    type: string
+                  ConferenceRecordingStatusCallback:
+                    description: ConferenceRecordingStatusCallback The URL we should
+                      call using the `conference_recording_status_callback_method`
+                      when the conference recording is available.
+                    type: string
+                  ConferenceRecordingStatusCallbackEvent:
+                    description: 'ConferenceRecordingStatusCallbackEvent The conference
+                      recording state changes that generate a call to `conference_recording_status_callback`.
+                      Can be: `in-progress`, `completed`, `failed`, and `absent`.
+                      Separate multiple values with a space, ex: `''in-progress completed
+                      failed''`'
+                    items:
+                      type: string
+                    type: array
+                  ConferenceRecordingStatusCallbackMethod:
+                    description: 'ConferenceRecordingStatusCallbackMethod The HTTP
+                      method we should use to call `conference_recording_status_callback`.
+                      Can be: `GET` or `POST` and defaults to `POST`.'
+                    type: string
+                  ConferenceSid:
+                    description: ConferenceSid The SID of the participant's conference.
+                    type: string
+                  ConferenceStatusCallback:
+                    description: ConferenceStatusCallback The URL we should call using
+                      the `conference_status_callback_method` when the conference
+                      events in `conference_status_callback_event` occur. Only the
+                      value set by the first participant to join the conference is
+                      used. Subsequent `conference_status_callback` values are ignored.
+                    type: string
+                  ConferenceStatusCallbackEvent:
+                    description: 'ConferenceStatusCallbackEvent The conference state
+                      changes that should generate a call to `conference_status_callback`.
+                      Can be: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`,
+                      `speaker`, and `announcement`. Separate multiple values with
+                      a space. Defaults to `start end`.'
+                    items:
+                      type: string
+                    type: array
+                  ConferenceStatusCallbackMethod:
+                    description: 'ConferenceStatusCallbackMethod The HTTP method we
+                      should use to call `conference_status_callback`. Can be: `GET`
+                      or `POST` and defaults to `POST`.'
+                    type: string
+                  ConferenceTrim:
+                    description: 'ConferenceTrim Whether to trim leading and trailing
+                      silence from the conference recording. Can be: `trim-silence`
+                      or `do-not-trim` and defaults to `trim-silence`.'
+                    type: string
+                  EarlyMedia:
+                    description: 'EarlyMedia Whether to allow an agent to hear the
+                      state of the outbound call, including ringing or disconnect
+                      messages. Can be: `true` or `false` and defaults to `true`.'
+                    type: boolean
+                  EmergencyAddress:
+                    description: 'EmergencyAddress The emergency caller''s street
+                      address including street number and street name. Note: If the
+                      value exceeds 60 characters, only the first 60 characters will
+                      be used.'
+                    type: string
+                  EmergencyCallerLocation:
+                    description: 'EmergencyCallerLocation The emergency caller''s
+                      physical location description within a building or facility.
+                      Note: If the value exceeds 20 characters, only the first 20
+                      characters will be used.'
+                    type: string
+                  EmergencyCallerPosition:
+                    description: 'EmergencyCallerPosition The emergency caller''s
+                      GPS coordinates in decimal degrees format. Format: \\\"latitude
+                      longitude\\\" (space-separated) - Latitude: decimal degrees,
+                      range -90.0 to +90.0 (negative for South, positive for North)
+                      - Longitude: decimal degrees, range -180.0 to +180.0 (negative
+                      for West, positive for East) - Precision: up to 6 decimal places
+                      recommended for meter-level accuracy Note: If the value exceeds
+                      150 characters, only the first 150 characters will be used.'
+                    type: string
+                  EmergencyCity:
+                    description: 'EmergencyCity The emergency caller''s city or municipality
+                      name. Should be the official city name as recognized by local
+                      authorities. Used in combination with state and country for
+                      emergency call routing. Note: If the value exceeds 20 characters,
+                      only the first 20 characters will be used.'
+                    type: string
+                  EmergencyCountry:
+                    description: 'EmergencyCountry The emergency caller''s country.
+                      Currently supported US and CA only. Note: If the value exceeds
+                      20 characters, only the first 20 characters will be used.'
+                    type: string
+                  EmergencyName:
+                    description: 'EmergencyName The emergency caller''s organization
+                      or entity name. Note: If the value exceeds 20 characters, only
+                      the first 20 characters will be used.'
+                    type: string
+                  EmergencyState:
+                    description: 'EmergencyState The emergency caller''s state or
+                      province. Note: If the value exceeds 20 characters, only the
+                      first 20 characters will be used.'
+                    type: string
+                  EmergencyZipCode:
+                    description: 'EmergencyZipCode The emergency caller''s postal
+                      code or ZIP code. Note: If the value exceeds 20 characters,
+                      only the first 20 characters will be used.'
+                    type: string
+                  EndConferenceOnExit:
+                    description: 'EndConferenceOnExit Whether to end the conference
+                      when the participant leaves. Can be: `true` or `false` and defaults
+                      to `false`.'
+                    type: boolean
+                  From:
+                    description: From The phone number, Client identifier, or username
+                      portion of SIP address that made this call. Phone numbers are
+                      in [E.164](https://www.twilio.com/docs/glossary/what-e164) format
+                      (e.g., +16175551212). Client identifiers are formatted `client:name`.
+                      If using a phone number, it must be a Twilio number or a Verified
+                      [outgoing caller id](https://www.twilio.com/docs/voice/api/outgoing-caller-ids)
+                      for your account. If the `to` parameter is a phone number, `from`
+                      must also be a phone number. If `to` is sip address, this value
+                      of `from` should be a username portion to be used to populate
+                      the P-Asserted-Identity header that is passed to the SIP endpoint.
+                    type: string
+                  Hold:
+                    description: 'Hold Whether the participant should be on hold.
+                      Can be: `true` or `false`. `true` puts the participant on hold,
+                      and `false` lets them rejoin the conference.'
+                    type: boolean
+                  HoldMethod:
+                    description: 'HoldMethod The HTTP method we should use to call
+                      `hold_url`. Can be: `GET` or `POST` and the default is `GET`.'
+                    type: string
+                  HoldUrl:
+                    description: HoldUrl The URL we call using the `hold_method` for
+                      music that plays when the participant is on hold. The URL may
+                      return an MP3 file, a WAV file, or a TwiML document that contains
+                      `<Play>`, `<Say>`, `<Pause>`, or `<Redirect>` verbs.
+                    type: string
+                  JitterBufferSize:
+                    description: 'JitterBufferSize Jitter buffer size for the connecting
+                      participant. Twilio will use this setting to apply Jitter Buffer
+                      before participant''s audio is mixed into the conference. Can
+                      be: `off`, `small`, `medium`, and `large`. Default to `large`.'
+                    type: string
+                  Label:
+                    description: Label A label for this participant. If one is supplied,
+                      it may subsequently be used to fetch, update or delete the participant.
+                    type: string
+                  MachineDetection:
+                    description: 'MachineDetection Whether to detect if a human, answering
+                      machine, or fax has picked up the call. Can be: `Enable` or
+                      `DetectMessageEnd`. Use `Enable` if you would like us to return
+                      `AnsweredBy` as soon as the called party is identified. Use
+                      `DetectMessageEnd`, if you would like to leave a message on
+                      an answering machine. For more information, see [Answering Machine
+                      Detection](https://www.twilio.com/docs/voice/answering-machine-detection).'
+                    type: string
+                  MachineDetectionSilenceTimeout:
+                    description: 'MachineDetectionSilenceTimeout The number of milliseconds
+                      of initial silence after which an `unknown` AnsweredBy result
+                      will be returned. Possible Values: 2000-10000. Default: 5000.'
+                    type: integer
+                  MachineDetectionSpeechEndThreshold:
+                    description: 'MachineDetectionSpeechEndThreshold The number of
+                      milliseconds of silence after speech activity at which point
+                      the speech activity is considered complete. Possible Values:
+                      500-5000. Default: 1200.'
+                    type: integer
+                  MachineDetectionSpeechThreshold:
+                    description: 'MachineDetectionSpeechThreshold The number of milliseconds
+                      that is used as the measuring stick for the length of the speech
+                      activity, where durations lower than this value will be interpreted
+                      as a human and longer than this value as a machine. Possible
+                      Values: 1000-6000. Default: 2400.'
+                    type: integer
+                  MachineDetectionTimeout:
+                    description: MachineDetectionTimeout The number of seconds that
+                      we should attempt to detect an answering machine before timing
+                      out and sending a voice request with `AnsweredBy` of `unknown`.
+                      The default timeout is 30 seconds.
+                    type: integer
+                  MaxParticipants:
+                    description: MaxParticipants The maximum number of participants
+                      in the conference. Can be a positive integer from `2` to `250`.
+                      The default value is `250`.
+                    type: integer
+                  Muted:
+                    description: Muted Whether the agent is muted in the conference.
+                      Can be `true` or `false` and the default is `false`.
+                    type: boolean
+                  Passports:
+                    description: Passports The STIR/SHAKEN passport for this call,
+                      provided as a base64 encoded string. Multiple passports (at
+                      max 5) are comma separated and provided as base64 encoded string
+                    type: string
+                  PathAccountSid:
+                    description: PathAccountSid The SID of the [Account](https://www.twilio.com/docs/iam/api/account)
+                      that will create the resource.
+                    type: string
+                  Record:
+                    description: Record Whether to record the participant and their
+                      conferences, including the time between conferences. Can be
+                      `true` or `false` and the default is `false`.
+                    type: boolean
+                  RecordingChannels:
+                    description: 'RecordingChannels The recording channels for the
+                      final recording. Can be: `mono` or `dual` and the default is
+                      `mono`.'
+                    type: string
+                  RecordingConfigurationId:
+                    description: RecordingConfigurationId The identifier of the configuration
+                      to be used when creating and processing the recording
+                    type: string
+                  RecordingStatusCallback:
+                    description: RecordingStatusCallback The URL that we should call
+                      using the `recording_status_callback_method` when the recording
+                      status changes.
+                    type: string
+                  RecordingStatusCallbackEvent:
+                    description: 'RecordingStatusCallbackEvent The recording state
+                      changes that should generate a call to `recording_status_callback`.
+                      Can be: `started`, `in-progress`, `paused`, `resumed`, `stopped`,
+                      `completed`, `failed`, and `absent`. Separate multiple values
+                      with a space, ex: `''in-progress completed failed''`.'
+                    items:
+                      type: string
+                    type: array
+                  RecordingStatusCallbackMethod:
+                    description: 'RecordingStatusCallbackMethod The HTTP method we
+                      should use when we call `recording_status_callback`. Can be:
+                      `GET` or `POST` and defaults to `POST`.'
+                    type: string
+                  RecordingTrack:
+                    description: 'RecordingTrack The audio track to record for the
+                      call. Can be: `inbound`, `outbound` or `both`. The default is
+                      `both`. `inbound` records the audio that is received by Twilio.
+                      `outbound` records the audio that is sent from Twilio. `both`
+                      records the audio that is received and sent by Twilio.'
+                    type: string
+                  Region:
+                    description: Region The [region](https://support.twilio.com/hc/en-us/articles/223132167-How-global-low-latency-routing-and-region-selection-work-for-conferences-and-Client-calls)
+                      where we should mix the recorded audio. Can be:`us1`, `us2`,
+                      `ie1`, `de1`, `sg1`, `br1`, `au1`, or `jp1`.
+                    type: string
+                  SipAuthPassword:
+                    description: SipAuthPassword The SIP password for authentication.
+                    type: string
+                  SipAuthUsername:
+                    description: SipAuthUsername The SIP username used for authentication.
+                    type: string
+                  StartConferenceOnEnter:
+                    description: 'StartConferenceOnEnter Whether to start the conference
+                      when the participant joins, if it has not already started. Can
+                      be: `true` or `false` and the default is `true`. If `false`
+                      and the conference has not started, the participant is muted
+                      and hears background music until another participant starts
+                      the conference.'
+                    type: boolean
+                  StatusCallback:
+                    description: StatusCallback The URL we should call using the `status_callback_method`
+                      to send status information to your application.
+                    type: string
+                  StatusCallbackEvent:
+                    description: 'StatusCallbackEvent The conference state changes
+                      that should generate a call to `status_callback`. Can be: `initiated`,
+                      `ringing`, `answered`, and `completed`. Separate multiple values
+                      with a space. The default value is `completed`.'
+                    items:
+                      type: string
+                    type: array
+                  StatusCallbackMethod:
+                    description: 'StatusCallbackMethod The HTTP method we should use
+                      to call `status_callback`. Can be: `GET` and `POST` and defaults
+                      to `POST`.'
+                    type: string
+                  TimeLimit:
+                    description: TimeLimit The maximum duration of the call in seconds.
+                      Constraints depend on account and configuration.
+                    type: integer
+                  Timeout:
+                    description: Timeout The number of seconds that we should allow
+                      the phone to ring before assuming there is no answer. Can be
+                      an integer between `5` and `600`, inclusive. The default value
+                      is `60`. We always add a 5-second timeout buffer to outgoing
+                      calls, so value of 10 would result in an actual timeout that
+                      was closer to 15 seconds.
+                    type: integer
+                  To:
+                    description: To The phone number, SIP address, Client, TwiML App
+                      identifier that received this call. Phone numbers are in [E.164](https://www.twilio.com/docs/glossary/what-e164)
+                      format (e.g., +16175551212). SIP addresses are formatted as
+                      `sip:name@company.com`. Client identifiers are formatted `client:name`.
+                      TwiML App identifiers are formatted `app:<APP_SID>`. [Custom
+                      parameters](https://www.twilio.com/docs/voice/api/conference-participant-resource#custom-parameters)
+                      may also be specified.
+                    type: string
+                  Trim:
+                    description: 'Trim Whether to trim any leading and trailing silence
+                      from the participant recording. Can be: `trim-silence` or `do-not-trim`
+                      and the default is `trim-silence`.'
+                    type: string
+                  WaitMethod:
+                    description: WaitMethod The HTTP method we should use to call
+                      `wait_url`. Can be `GET` or `POST` and the default is `POST`.
+                      When using a static audio file, this should be `GET` so that
+                      we can cache the file.
+                    type: string
+                  WaitUrl:
+                    description: WaitUrl The URL that Twilio calls using the `wait_method`
+                      before the conference has started. The URL may return an MP3
+                      file, a WAV file, or a TwiML document. The default value is
+                      the URL of our standard hold music. If you do not want anything
+                      to play while waiting for the conference to start, specify an
+                      empty string by setting `wait_url` to `''`. For more details
+                      on the allowable verbs within the `waitUrl`, see the `waitUrl`
+                      attribute in the [<Conference> TwiML instruction](https://www.twilio.com/docs/voice/twiml/conference#attributes-waiturl).
+                    type: string
+                required:
+                - ConferenceSid
+                - From
+                - To
+                type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
+              providerConfigRef:
+                default:
+                  kind: ClusterProviderConfig
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
+                properties:
+                  kind:
+                    description: Kind of the referenced object.
+                    type: string
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A AccountsConferencesParticipantsStatus represents the observed
+              state of a AccountsConferencesParticipants.
+            properties:
+              atProvider:
+                description: |-
+                  AccountsConferencesParticipantsObservation are the observable fields of a AccountsConferencesParticipants.
+
+                  These are the properties of what the read (FetchParticipant) answers -- what IS,
+                  including the fields a person also writes. The controller diffs the two.
+                properties:
+                  account_sid:
+                    type: string
+                  call_sid:
+                    type: string
+                  call_sid_to_coach:
+                    type: string
+                  coaching:
+                    type: boolean
+                  conference_sid:
+                    type: string
+                  date_created:
+                    type: string
+                  date_updated:
+                    type: string
+                  end_conference_on_exit:
+                    type: boolean
+                  hold:
+                    type: boolean
+                  label:
+                    type: string
+                  muted:
+                    type: boolean
+                  queue_time:
+                    type: string
+                  start_conference_on_enter:
+                    type: boolean
+                  status:
+                    type: string
+                  uri:
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastHandledReconcileAt:
+                description: |-
+                  LastHandledReconcileAt holds the value of the most recent
+                  reconcile-requested-at annotation token that the controller has
+                  processed. Users can compare this to the annotation to determine
+                  whether a reconcile request has been handled.
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

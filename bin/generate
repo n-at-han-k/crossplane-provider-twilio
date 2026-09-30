@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# The whole build: one Twilio API document in, one Crossplane provider out.
+#
+# What lands in the repo is COMMITTED -- the image compiles what is here, not
+# what a regeneration would produce. Run this, look at the diff, commit it.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# One document for now: api v2010, the core API -- phone numbers, messages,
+# calls, keys, SIP, queues. See PLAN.md for why the other 59 wait, and
+# TOOLCHAIN.md for why the generator is pinned where it is.
+DOMAIN=${1:-twilio_api_v2010}
+SPEC=reference/twilio-oai/spec/json/$DOMAIN.json
+
+# Both the API description and Twilio's generator are SUBMODULES, so the
+# commits this tree was generated from are recorded rather than described:
+# `git submodule status` says which, and a regeneration after a bump is a diff
+# with the bump beside it. Checked out only when missing -- `git submodule
+# update` would otherwise reset a deliberate bump, which is exactly what this
+# script is for.
+if [ ! -f "$SPEC" ]; then
+  git submodule update --init reference/twilio-oai
+fi
+if [ ! -f reference/twilio-oai-generator/pom.xml ]; then
+  git submodule update --init reference/twilio-oai-generator
+fi
+
+test -f "$SPEC" || { echo "missing $SPEC -- the spec submodule did not check out"; exit 1; }
+
+# Twilio's generator, which is where the resource grouping, the CRUD verbs and
+# the external names come from. A shaded jar, so it carries the
+# openapi-generator it was compiled against (7.13.0) and nothing else is needed
+# on the classpath -- see TOOLCHAIN.md on why using nixpkgs' openapi-generator
+# here would be a version-skew waiting to happen.
+THEIRS=reference/twilio-oai-generator/target/twilio-openapi-generator.jar
+if [ ! -f "$THEIRS" ]; then
+  echo "building Twilio's generator"
+  (cd reference/twilio-oai-generator && mvn -B -q package -DskipTests)
+fi
+
+# Ours: the Crossplane shape on top of theirs. javac against their jar, no
+# Maven and no annotation processing -- their sources use lombok, their jar
+# does not need it.
+echo "building the Crossplane generator"
+rm -rf .work/codegen
+mkdir -p .work/codegen
+javac -nowarn -proc:none -cp "$THEIRS" -d .work/codegen \
+  generators/twilio/src/twilio/CrossplaneCodegen.java
+cp -r generators/twilio/resources/. .work/codegen/
+jar cf .work/twilio-crossplane-codegen.jar -C .work/codegen .
+
+# The generated trees, cleared first. Without this a Kind whose paths were
+# removed from the document stays behind for ever: the generator writes what
+# the document describes and never deletes what it no longer does.
+rm -rf apis internal/controller package/crds internal/clients
+
+echo "generating"
+java -cp ".work/twilio-crossplane-codegen.jar:$THEIRS" \
+  org.openapitools.codegen.OpenAPIGenerator generate \
+  -g twilio-crossplane \
+  -i "$SPEC" \
+  -o . \
+  --git-host github.com \
+  --git-user-id n-at-han-k \
+  --git-repo-id crossplane-provider-twilio \
+  --additional-properties="groupName=twilio.crossplane.io,crdVersion=v1alpha1,providerTitle=Twilio"
+
+# The build submodule is what the Makefile is written against; it is not in the
+# generator's output because it is not a file, it is a checkout.
+if [ ! -f build/makelib/common.mk ]; then
+  git submodule update --init --recursive build
+fi
+
+# Which imports each generated file needs depends on which operations the
+# document described for it, and that is goimports' job rather than a mustache
+# conditional per import. Twilio's own pipeline does the same -- their raw
+# output is space-indented with unsorted imports, and the committed
+# terraform-provider-twilio is byte-identical to it only after goimports.
+goimports -w apis internal cmd
+
+# The generator cannot write a go.sum -- only the toolchain knows the hashes.
+CGO_ENABLED=0 go mod tidy
+
+# DeepCopy, the crossplane-runtime methodsets and the CRDs. A mustache template
+# cannot see a Go type, so these are the two tools that can.
+make generate
+
+CGO_ENABLED=0 go build ./...
+echo "built clean"
+
+# Every resource Twilio's own rules select must have become a Kind here. The
+# generator inherits those rules rather than restating them, so this should
+# hold by construction -- which is exactly why it is worth asserting: the ways
+# it can silently stop holding are the interesting ones. See PARITY.md.
+python3 hack/parity.py kinds "$SPEC" .

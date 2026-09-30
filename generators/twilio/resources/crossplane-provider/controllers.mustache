@@ -1,0 +1,29 @@
+{{>partial_header}}
+
+package controller
+
+import (
+	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	"{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/internal/controller/config"
+{{#apiInfo}}{{#apis}}{{#operations}}
+	"{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/internal/controller/{{kindPackage}}"
+{{/operations}}{{/apis}}{{/apiInfo}}
+)
+
+// SetupGated creates all {{providerTitle}} controllers with safe-start support and adds
+// them to the supplied manager.
+func SetupGated(mgr ctrl.Manager, o controller.Options) error {
+	for _, setup := range []func(ctrl.Manager, controller.Options) error{
+		config.Setup,
+{{#apiInfo}}{{#apis}}{{#operations}}
+		{{kindPackage}}.SetupGated,
+{{/operations}}{{/apis}}{{/apiInfo}}
+	} {
+		if err := setup(mgr, o); err != nil {
+			return err
+		}
+	}
+	return nil
+}

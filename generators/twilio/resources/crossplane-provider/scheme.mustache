@@ -1,0 +1,32 @@
+{{>partial_header}}
+
+// Package apis contains the Kubernetes API of the {{providerTitle}} provider.
+package apis
+
+import (
+	"k8s.io/apimachinery/pkg/runtime"
+
+{{#apiInfo}}{{#apis}}{{#operations}}
+	{{kindPackage}}{{crdVersion}} "{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/apis/{{kindPackage}}/{{crdVersion}}"
+{{/operations}}{{/apis}}{{/apiInfo}}
+	{{providerName}}{{crdVersion}} "{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/apis/{{crdVersion}}"
+)
+
+func init() {
+	// Register the types with the Scheme so the components can map objects to
+	// GroupVersionKinds and back.
+	AddToSchemes = append(AddToSchemes,
+		{{providerName}}{{crdVersion}}.SchemeBuilder.AddToScheme,
+{{#apiInfo}}{{#apis}}{{#operations}}
+		{{kindPackage}}{{crdVersion}}.SchemeBuilder.AddToScheme,
+{{/operations}}{{/apis}}{{/apiInfo}}
+	)
+}
+
+// AddToSchemes may be used to add all resources defined in the project to a Scheme
+var AddToSchemes runtime.SchemeBuilder
+
+// AddToScheme adds all Resources to the Scheme
+func AddToScheme(s *runtime.Scheme) error {
+	return AddToSchemes.AddToScheme(s)
+}

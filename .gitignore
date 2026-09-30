@@ -1,0 +1,7 @@
+/_output/
+/.cache/
+/.work/
+
+# bin/generate builds the two generator jars here.
+.work/
+__pycache__/

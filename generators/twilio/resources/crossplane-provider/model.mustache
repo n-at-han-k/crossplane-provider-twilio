@@ -1,0 +1,43 @@
+{{>partial_header}}
+package {{providerName}}
+{{#models}}{{#model}}
+{{#vendorExtensions.x-opaque}}
+
+// {{classname}} is the {{classname}} schema of the API description, which
+// describes no fields of its own -- a union of scalars, or a shape the
+// document leaves open. An empty struct would refuse to hold what the API
+// sends; this holds whatever arrives.
+type {{classname}} interface{}
+{{/vendorExtensions.x-opaque}}
+{{^vendorExtensions.x-opaque}}
+{{#isEnum}}
+
+// {{classname}} is the {{classname}} schema of the API description: an enum,
+// so a named {{dataType}} rather than a struct. Rendered as a struct it would
+// be an EMPTY one, and every response carrying the field would fail to parse
+// with "cannot unmarshal string into Go struct field".
+type {{classname}} {{dataType}}
+{{/isEnum}}
+{{^isEnum}}
+{{#isAlias}}
+
+// {{classname}} is the {{classname}} schema of the API description, which
+// names a {{dataType}} rather than an object.
+type {{classname}} {{dataType}}
+{{/isAlias}}
+{{^isAlias}}
+
+// {{classname}} is the {{classname}} schema of the API description.
+//
+// allVars, not vars: a schema written as `allOf: [$ref, {...}]` keeps the
+// inherited half in the parent, and a struct built from `vars` alone would
+// silently drop `ref` and `_url` from every hyperlink.
+type {{classname}} struct {
+{{#allVars}}
+	{{name}} {{dataType}}{{{vendorExtensions.x-go-datatag}}}
+{{/allVars}}
+}
+{{/isAlias}}
+{{/isEnum}}
+{{/vendorExtensions.x-opaque}}
+{{/model}}{{/models}}
