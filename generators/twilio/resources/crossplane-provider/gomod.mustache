@@ -98,6 +98,12 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
+	// genproto was split into per-API submodules and the old monolith is still
+	// in the graph via k8s.io/apiserver and otel, so `go mod tidy` cannot tell
+	// which provides httpbody. Naming the split-out module settles it; without
+	// this, tidy fails on an ambiguous import while walking controller-tools
+	// TEST dependencies, which the tool directives drag in.
+	google.golang.org/genproto/googleapis/api v0.0.0-20260316180232-0b37fe3546d5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect

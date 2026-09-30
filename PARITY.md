@@ -15,8 +15,10 @@ Three catalogs of the same shape, and the differences between them:
 - **spec** — what Twilio's *own* rules select from an OpenAPI document.
 - **terraform** — what `terraform-provider-twilio` *actually* registers, read
   out of its generated Go.
-- **crossplane** — what this repo generates. Not implemented yet: there is
-  nothing to read until `bin/generate` has run once.
+- **crossplane** — what this repo generates, read out of `apis/` and
+  `internal/controller/`. Read from the OUTPUT rather than from the generator
+  on purpose: the question is what the provider does, and a catalog built from
+  the same rules that produced it could only ever agree with itself.
 
 `spec vs terraform` comes first and has to be **exact**. Without it, a
 difference between this provider and Twilio's cannot be told apart from a
@@ -127,6 +129,94 @@ A parity script that under-reads the thing it compares against produces a
 diff full of differences that are not there, and the temptation is to explain
 them. The check on that is rule 4's counterpart: the provider's 164 must all
 be found, and `provider has, rule misses` must be 0.
+
+## This provider against theirs
+
+`spec vs terraform` above establishes that the rules are read correctly. It
+says nothing about whether *this* provider implements them, which is a
+separate question and the one that matters:
+
+```bash
+hack/parity.py providers ../terraform-provider-twilio . api
+```
+
+For `twilio_api_v2010`, comparing the generated tree against
+terraform-provider-twilio's generated Go:
+
+| | |
+|---|---|
+| Kinds here | **22** |
+| resources there | **22** |
+| in both | **22** |
+| fields settable there and absent here | **0** |
+| fields settable there and only observed here | **0** |
+| fields computed there and not observed here | **0** |
+| CRUD differences | **0** |
+
+The comparison accounts for one structural difference rather than reporting it
+twenty-two times: Terraform keeps one flat schema per resource with
+server-assigned fields marked `Computed`, while Crossplane splits the same
+fields across `spec.forProvider` and `status.atProvider`. So Terraform's
+`Computed` fields are compared against the observation and the rest against
+the spec, and the resource's own id is excluded on both sides -- Terraform
+carries it as a schema field, Crossplane as the `crossplane.io/external-name`
+annotation.
+
+**The check can fail.** Renaming one generated field and deleting another
+reports both and exits 1:
+
+```
+twilio_api_accounts_addresses: settable in terraform, only observed here: ['city', 'street']
+```
+
+That is worth demonstrating rather than asserting, because a parity report
+that cannot fail is the easiest thing in this repo to produce by accident --
+see the two reader bugs below, both of which made Twilio's provider look
+smaller than it is.
+
+## Twilio's tests, and which of them are usable
+
+Asked directly: the resource-level tests are **not** reusable, and the two
+things that are have been used.
+
+**Used.** `twilio-oai-generator`'s own unit tests for the functions
+`hack/parity.py` transcribes -- `StringHelperTest.toSnakeCase` and
+`PathUtilsTest` -- are lifted into `hack/parity_test.py` with their inputs
+intact, and `bin/generate` runs them. Their vectors are better than anything
+written here would have been: `callbackURL`, `SomeA2PThing`, `AwsS3Url` and
+`Psd2Enabled` are exactly the acronym and digit boundaries where the two-pass
+`ToSnakeCase` inside terraform-provider-twilio disagrees with the four-pass one
+in the generator.
+
+**Also run.** `mvn test` in the generator submodule, at the pinned commit: 29
+tests, one error, and the error is `launchGenerator[5]` -- the **Python**
+generator. `[7]`, the Terraform generator this repo extends, passes. Worth
+knowing given that the same generator's Terraform path is dead on `main`.
+
+**Not usable, with reasons.**
+
+- `core/form_encoder_test.go` (254 lines), `core/query_encode_test.go`,
+  `core/nullable_test.go` (646), `core/sids_test.go` (850) test a hand-written
+  HTTP and marshalling layer. This provider has none: it uses `twilio-go`, as
+  terraform-provider-twilio itself does, so there is no form encoder, no SID
+  type and no nullable wrapper here to test. PLAN.md originally proposed
+  copying the form encoder; adopting the SDK made that unnecessary and these
+  tests along with it.
+- `core/provider_marshal_test.go` (1046) marshals between Terraform's
+  `ResourceData` and the SDK's params structs. There is no `ResourceData`
+  here. Its one portable part is the snake-case test, which is above.
+- `twilio/resources_flex_test.go` and `resources_serverless_test.go` (306) are
+  the only resource tests in the provider -- 2 resources of 164, neither in
+  `api v2010` -- and they are Terraform acceptance tests: HCL run under
+  `TF_ACC` against a live account through `resource.Test`. The Crossplane
+  equivalent is applying a manifest to a cluster with a real ProviderConfig,
+  which shares the idea and no code.
+
+So there is no behavioural test of this provider against a live Twilio
+account, from them or from us. What the table above establishes is that the
+two providers expose the same resources, the same fields on the same side of
+the spec/status split, and the same CRUD operations -- not that a reconcile
+does the same thing an apply does.
 
 ## The decision this leaves open
 

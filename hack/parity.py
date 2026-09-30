@@ -285,6 +285,142 @@ def catalog_terraform(provider_dir):
     return out
 
 
+# ------------------------------------------------ reading this generated provider
+
+# apis/<pkg>/<version>/<pkg>_types.go, the two structs that are the CRD.
+PARAMS_STRUCT = re.compile(r"type (\w+)Parameters struct \{(.*?)\n\}", re.S)
+OBSERVATION_STRUCT = re.compile(r"type (\w+)Observation struct \{(.*?)\n\}", re.S)
+GO_FIELD = re.compile(r'^\s*(\w+)\s+([\w\[\]\.]+)\s+`json:"([^",]+)', re.M)
+# internal/controller/<pkg>/<pkg>.go: which twilio-go calls it actually makes.
+SDK_CALL = re.compile(r"c\.service\.Rest\.\w+\.(\w+)\(")
+
+
+def catalog_crossplane(repo):
+    """What this repo generates, read out of the generated tree.
+
+    Deliberately read from the OUTPUT rather than from the generator: the
+    question is what the provider does, and a catalog built from the same
+    rules that produced it could only ever agree with itself.
+    """
+    out = {}
+    apis = os.path.join(repo, "apis")
+
+    if not os.path.isdir(apis):
+        return out
+
+    for pkg in sorted(os.listdir(apis)):
+        directory = os.path.join(apis, pkg)
+        if not os.path.isdir(directory) or re.fullmatch(r"v\d+\w*", pkg):
+            continue
+
+        types = None
+        for root, _dirs, files in os.walk(directory):
+            for name in files:
+                if name.endswith("_types.go"):
+                    types = os.path.join(root, name)
+        if types is None:
+            continue
+
+        source = open(types).read()
+        spec = PARAMS_STRUCT.search(source)
+        observed = OBSERVATION_STRUCT.search(source)
+
+        controller = os.path.join(repo, "internal", "controller", pkg, pkg + ".go")
+        calls = sorted(set(SDK_CALL.findall(open(controller).read()))) if os.path.isfile(controller) else []
+
+        out[pkg] = {
+            "kind": spec.group(1) if spec else None,
+            # The CRD spells a request field the way Twilio takes it
+            # (PascalCase), so it is snake-cased to compare with anything else.
+            "spec": {to_snake(f[2]) for f in GO_FIELD.findall(spec.group(2))} if spec else set(),
+            "observation": {f[2] for f in GO_FIELD.findall(observed.group(2))} if observed else set(),
+            "calls": calls,
+        }
+
+    return out
+
+
+def diff_providers(tf_catalog, cp_catalog, product):
+    """This provider against terraform-provider-twilio, field by field.
+
+    The comparison has to account for one structural difference rather than
+    report it 22 times: Terraform keeps one flat schema per resource, with
+    server-assigned fields marked Computed, while Crossplane splits the same
+    fields across spec.forProvider and status.atProvider. So Terraform's
+    Computed fields are compared against the observation and the rest against
+    the spec.
+    """
+    problems = 0
+    mapped = {}
+
+    for pkg in cp_catalog:
+        mapped["twilio_%s_%s" % (product, pkg)] = pkg
+
+    ours, theirs = set(mapped), {k for k in tf_catalog if k.startswith("twilio_%s_" % product)}
+
+    print("this provider: %d Kinds   terraform-provider-twilio (%s): %d resources   in both: %d"
+          % (len(ours), product, len(theirs), len(ours & theirs)))
+
+    for label, names in (("terraform has, we do not", theirs - ours),
+                         ("we have, terraform does not", ours - theirs)):
+        print("\n--- %s (%d) ---" % (label, len(names)))
+        for name in sorted(names):
+            print("   ", name)
+        problems += len(names)
+
+    print("\n--- field differences ---")
+    for name in sorted(ours & theirs):
+        pkg = mapped[name]
+        fields = tf_catalog[name]["fields"]
+
+        writable = {f for f, flag in fields.items() if flag != "Computed"}
+        computed = {f for f, flag in fields.items() if flag == "Computed"}
+
+        # The resource's own id: Terraform carries it as a schema field,
+        # Crossplane as the crossplane.io/external-name annotation. Not a
+        # difference in what the provider can do.
+        external = set(tf_catalog[name]["import_parts"])
+
+        missing = writable - cp_catalog[pkg]["spec"] - external
+        # A field Terraform lets you SET that we only observe is still a
+        # difference in what the provider can do, so it is reported on its own
+        # line rather than folded into the one above -- or, worse, subtracted
+        # out to keep the report clean.
+        readonly = {f for f in missing if f in cp_catalog[pkg]["observation"]}
+        missing -= readonly
+        unobserved = computed - cp_catalog[pkg]["observation"] - external
+
+        if missing:
+            print("   %s: settable in terraform, absent here: %s"
+                  % (name, sorted(missing)))
+            problems += 1
+        if readonly:
+            print("   %s: settable in terraform, only observed here: %s"
+                  % (name, sorted(readonly)))
+            problems += 1
+        if unobserved:
+            print("   %s: computed in terraform, not in status.atProvider: %s"
+                  % (name, sorted(unobserved)))
+            problems += 1
+
+    print("\n--- CRUD differences ---")
+    for name in sorted(ours & theirs):
+        pkg = mapped[name]
+        expected = set(tf_catalog[name]["verbs"])
+        # Every controller reads, creates and deletes; Update is generated only
+        # when the document describes one, which is also when Terraform emits
+        # UpdateContext.
+        actual = {"Create", "Read", "Delete"}
+        if any(call.startswith("Update") for call in cp_catalog[pkg]["calls"]):
+            actual.add("Update")
+
+        if expected != actual:
+            print("   %s: terraform %s, ours %s" % (name, sorted(expected), sorted(actual)))
+            problems += 1
+
+    return problems
+
+
 # ---------------------------------------------------------------------- the diff
 
 # Terraform's CRUD context names against the verbs the spec catalog reports.
@@ -382,6 +518,15 @@ def main():
         return 1 if diff(catalog_spec(sys.argv[2]), catalog_terraform(sys.argv[3])) else 0
     if mode == "kinds":
         return kinds(sys.argv[2], sys.argv[3])
+    if mode == "crossplane":
+        json.dump({k: {kk: sorted(vv) if isinstance(vv, set) else vv for kk, vv in v.items()}
+                   for k, v in catalog_crossplane(sys.argv[2]).items()},
+                  sys.stdout, indent=1, sort_keys=True)
+        return 0
+    if mode == "providers":
+        product = sys.argv[4] if len(sys.argv) > 4 else "api"
+        return 1 if diff_providers(catalog_terraform(sys.argv[2]),
+                                   catalog_crossplane(sys.argv[3]), product) else 0
 
     print("unknown mode %r" % mode)
     return 2

@@ -94,3 +94,17 @@ echo "built clean"
 # hold by construction -- which is exactly why it is worth asserting: the ways
 # it can silently stop holding are the interesting ones. See PARITY.md.
 python3 hack/parity.py kinds "$SPEC" .
+
+# The four functions hack/parity.py transcribes from Twilio's generator, against
+# Twilio's own unit-test vectors. A transcription is worth having only while it
+# is exact, and it stops being exact silently.
+python3 hack/parity_test.py
+
+# And the real question: does this provider cover what terraform-provider-twilio
+# covers, field by field? Only when a checkout is there to compare against --
+# the rest of the pipeline must not need one.
+if [ -d ../terraform-provider-twilio ]; then
+  python3 hack/parity.py providers ../terraform-provider-twilio . api
+else
+  echo "skipping the provider comparison: ../terraform-provider-twilio is not checked out"
+fi

@@ -60,8 +60,6 @@ require (
 	github.com/go-openapi/swag/typeutils v0.25.5 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.5 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -117,4 +115,9 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
+)
+
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/golang/mock v1.6.0 // indirect
 )
