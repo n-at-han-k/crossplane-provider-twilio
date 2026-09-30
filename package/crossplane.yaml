@@ -9,15 +9,25 @@ metadata:
     meta.crossplane.io/source: github.com/n-at-han-k/crossplane-provider-twilio
     meta.crossplane.io/license: Apache-2.0
     meta.crossplane.io/description: |
-      Manage Twilio Identity Server as Kubernetes resources.
+      Manage Twilio as Kubernetes resources.
     meta.crossplane.io/readme: |
-      `provider-twilio` manages Twilio Identity Server as Kubernetes
-      resources, so tenants, organizations and applications can be declared
-      alongside the rest of your cluster and reconciled by Crossplane.
+      `provider-twilio` manages Twilio as Kubernetes resources, so
+      phone numbers, messaging services, SIP domains and the rest can be
+      declared alongside the rest of your cluster and reconciled by
+      Crossplane.
 
-      It is GENERATED from the API descriptions Twilio publishes with the
-      server itself, so what it can manage is what those documents describe --
-      no more, and nothing hand-maintained that can drift from them.
+      It is GENERATED, and not by a generator written for it: the Kinds below
+      come from [twilio-oai](https://github.com/twilio/twilio-oai), Twilio's
+      own API description, through
+      [twilio-oai-generator](https://github.com/twilio/twilio-oai-generator),
+      Twilio's own openapi-generator, with a Crossplane generator added
+      alongside its Terraform one. The API client is
+      [twilio-go](https://github.com/twilio/twilio-go).
+
+      So what this provider can manage is what Twilio describes, and which
+      operations make up a resource is Twilio's own answer rather than a
+      guess -- the same answer its Terraform provider gets, from the same
+      code.
 
       ## Managed resources
 
@@ -90,9 +100,13 @@ metadata:
 
       ## Getting started
 
-      Install the provider, then give it an endpoint and a credential. Unlike
-      a single-key API, Twilio needs to be told WHERE it is as well as who
-      you are, so the secret is one JSON document rather than a bare token:
+      Install the provider, then give it a credential. Twilio authenticates
+      with HTTP basic, and there are two things to put in the secret -- an
+      Account SID with its Auth Token, or an API Key with its secret. Prefer
+      the second: a key can be revoked without rotating the account.
+
+      There is no endpoint to set. Every operation's base URL comes from the
+      SDK, and the API description gives a different one per product.
 
       ```yaml
       apiVersion: pkg.crossplane.io/v1
@@ -111,9 +125,9 @@ metadata:
       stringData:
         credentials: |
           {
-            "endpoint": "https://identity.example.com/api/server/v1",
-            "username": "admin",
-            "password": "admin"
+            "accountSid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "apiKey":     "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "apiSecret":  "..."
           }
       ---
       apiVersion: twilio.crossplane.io/v1alpha1
@@ -129,7 +143,15 @@ metadata:
             key: credentials
       ```
 
-      `token` and `apiKey` are accepted in place of `username`/`password`.
+      `authToken` is accepted in place of `apiKey`/`apiSecret`, and
+      `username`/`password` as aliases for whichever pair is in use.
+      `edge` and `region` reach Twilio somewhere other than the default.
+
+      A field is spelled the way Twilio takes it -- `spec.forProvider.FriendlyName`,
+      not `friendlyName` -- because the wire name IS the field name, so there
+      is no translation layer for anything to drift out of.
+      `status.atProvider` spells the same values the way Twilio answers them,
+      in snake_case.
 
       See the `examples/` directory in the source repository for a manifest per
       managed resource.
